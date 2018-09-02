@@ -1,0 +1,31 @@
+{
+  "name": "scheduler",
+  "version": "1.0.0",
+  "description": "",
+  "main": "app.js",
+  "scripts": {
+    "lint": "eslint .",
+    "start": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jchen31995/Scheduler.git"
+  },
+  "author": "James Chen",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jchen31995/Scheduler/issues"
+  },
+  "homepage": "https://github.com/jchen31995/Scheduler#readme",
+  "dependencies": {
+    "eslint-plugin-node": "^7.0.1",
+    "express": "^4.16.3",
+    "nodemon": "^1.18.4"
+  },
+  "devDependencies": {
+    "eslint": "^5.5.0",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.14.0"
+  }
+}
