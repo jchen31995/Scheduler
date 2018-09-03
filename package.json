@@ -20,6 +20,7 @@
   "homepage": "https://github.com/jchen31995/Scheduler#readme",
   "dependencies": {
     "@slack/client": "^4.6.0",
+    "body-parser": "^1.18.3",
     "dotenv-safe": "^6.0.0",
     "eslint-plugin-node": "^7.0.1",
     "express": "^4.16.3",
