@@ -1,7 +1,14 @@
-var express = require('express')
-var app = express()
+require('dotenv-safe').config()
+const express = require('express')
+const googleAPI = require('./google_api/routes')
 
-app.get('/', function (req, res) {
+require('./slack_bot')
+
+const app = express()
+
+app.use(googleAPI)
+
+app.get('/', (req, res) => {
   res.send('Hello hello!')
 })
 
