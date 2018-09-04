@@ -1,9 +1,8 @@
-const { getAuthClient, getAuthURL } = require('../google_api/helper_methods')
-
-const { getUserInfo } = require('./helper_methods')
 
 const { RTMClient } = require('@slack/client')
+const { getUserInfo } = require('./helper_methods')
 
+const NGROK_URL = process.env.NGROK_URL
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
 const rtm = new RTMClient(SLACK_BOT_TOKEN)
 
@@ -22,9 +21,8 @@ rtm.on('message', (message) => {
     })
     .then((user) => {
       if (!user.google_auth_tokens) {
-        const googleAuthClient = getAuthClient()
-        const googleAuthURL = getAuthURL(googleAuthClient,user.slack_id)
-        rtm.sendMessage(googleAuthURL, message.channel)
+        const authenticationURL = `${ NGROK_URL }/authenticate?slack_id=${user.slack_id}`
+        rtm.sendMessage(`Please connect me to your Google Calendar here: ${authenticationURL}`, message.channel)
         .catch(console.error)
       }
     })
