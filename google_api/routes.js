@@ -1,5 +1,6 @@
 const express = require('express')
-const { getAuthClient, getAuthToken, getAuthURL, listEvents } = require('./helper_methods')
+const { getAuthClient, getAuthToken, getAuthURL } = require('./oauth_methods')
+const { listEvents } = require('./calendar_methods')
 
 const router = express.Router()
 
