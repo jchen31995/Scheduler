@@ -11,9 +11,9 @@ const listEvents = async (userSlackId) => {
     maxResults: 10,
     singleEvents: true,
     orderBy: 'startTime',
-  }, (err, res) => {
-    if (err) return console.log('The API returned an error: ' + err)
-    const events = res.data.items;
+  })
+  .then((resp) => {
+    const events = resp.data.items;
     if (events.length) {
       console.log('Upcoming 10 events:')
       events.map((event) => {
@@ -24,6 +24,7 @@ const listEvents = async (userSlackId) => {
       console.log('No upcoming events found.')
     }
   })
+  .catch((err) => err)
 }
 
 const addEvent = async (userSlackId, event) => {
@@ -34,10 +35,11 @@ const addEvent = async (userSlackId, event) => {
     calendarId: 'primary',
     resource: event,
   })
-  .then((createdEvent) => {
-    console.log('Event created: %s', createdEvent.data.htmlLink)
+  .then((resp) => {
+    const createdEvent = resp.data
+    console.log('Event created: %s', createdEvent.htmlLink)
   })
-  .catch((err) => {console.log('some error: ', err)})
+  .catch((err) => err)
 }
 
 module.exports = {
