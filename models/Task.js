@@ -3,10 +3,12 @@ mongoose.Promise = global.Promise
 const Schema = mongoose.Schema
 
 const taskSchema = new Schema({
-  subject: {
+  summary: {
     type: String,
     required: true,
   },
+  location: String,
+  description: String,
   day: {
     type: String,
     required: true,

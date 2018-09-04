@@ -15,8 +15,9 @@ const meetingSchema = new Schema({
     type: Array,
     required: true,
   },
-  subject: String,
+  summary: String,
   location: String,
+  description: String,
   meeting_length: Number,
   google_calendar: Object,
   status: String, // pending, scheduled
