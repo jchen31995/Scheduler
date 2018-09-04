@@ -1,35 +1,39 @@
 const { google } = require('googleapis')
 
 // Tokens
-let GOOGLE_API_TOKEN = null
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''
 const GOOGLE_REDIRECT_URL = process.env.GOOGLE_REDIRECT_URL || ''
 const scope = ['https://www.googleapis.com/auth/calendar']
 
+const User = require('../models/User')
+
 const getAuthClient = () => new google.auth.OAuth2(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REDIRECT_URL)
 
-// Will need to save the tokens somewhere. For now,store it in GOOGLE_API_TOKEN
-const getAuthToken = (code) => {
+// Gets + Saves Google Auth Tokens
+const getAuthToken = (code, userSlackId) => {
   const oauth2Client = getAuthClient()
   return new Promise((resolve, reject) => {
-    oauth2Client.getToken(code, (err, tokens) => {
+    oauth2Client.getToken(code, async (err, tokens) => {
       if (err) {
         return reject(err)
       }
-      // save token here
-      GOOGLE_API_TOKEN = tokens
+      await User.findOneAndUpdate({ slack_id: userSlackId }, { "$set": { 'google_auth_tokens': tokens } })
       return resolve(tokens)
     })
   })
 }
 
-const getAuthURL = (oauth2Client) => oauth2Client.generateAuthUrl({ access_type: 'offline', scope })
+const getAuthURL = (oauth2Client, userSlackId) => oauth2Client.generateAuthUrl({ access_type: 'offline', scope, state: userSlackId })
 
 // once you have token saved, you can move every calendar message to separate file
-const listEvents = () => {
+const listEvents = async (userSlackId) => {
   const auth = getAuthClient()
-  auth.setCredentials(GOOGLE_API_TOKEN)
+  await User.findOne({ slack_id: userSlackId })
+    .then ((user) => {
+      return auth.setCredentials(user.google_auth_tokens)
+    })
+    .catch((err) => console.log("Error finding user: ", err))
 
   const calendar = google.calendar({version: 'v3', auth})
   calendar.events.list({

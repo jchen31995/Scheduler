@@ -1,5 +1,6 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose')
+mongoose.Promise = global.Promise
+const Schema = mongoose.Schema
 
 const meetingSchema = new Schema({
   day: {
@@ -21,7 +22,7 @@ const meetingSchema = new Schema({
   status: String, // pending, scheduled
   created_at: Date,
   requester_id: String,
-})
+}, { minimize: false })
 
 const Meeting = mongoose.model('Meeting', meetingSchema)
 

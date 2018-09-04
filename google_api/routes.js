@@ -4,17 +4,18 @@ const { getAuthToken, listEvents } = require('./helper_methods')
 const router = express.Router()
 
 
-// Request sends back object with access_token and refresh_token
-// Save this somewhere
+// google authentication happens here
 router.get('/oauthcallback', async (req, res) => {
-  getAuthToken(req.query.code).then((resp) => {
-    res.send('Successfully authenticated user')
-  }).catch(err => console.log("sgetting some error: ", err))
+  getAuthToken(req.query.code, req.query.state).then((resp) => {
+    res.send('Successfully authenticated user. Head back over to slack!')
+  }).catch(err => console.log("getting some error: ", err))
 })
 
+// route to test if google calendar successfully authenticated + working
 router.get('/list-events', (req, res) => {
-  listEvents()
-  res.send('successfully authenticated and listed calendar')
+  const userSlackId = req.query.slack_id
+  listEvents(userSlackId)
+  res.status(200).send('Lists 10 upcoming events')
 })
 
 module.exports = router

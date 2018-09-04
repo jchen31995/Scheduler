@@ -1,14 +1,20 @@
-const mongoose = require('mongoose');
-const Schema = mongoose.Schema;
+const mongoose = require('mongoose')
+mongoose.Promise = global.Promise
+const Schema = mongoose.Schema
 
 const userSchema = new Schema({
-  default_meeting_length: Number,
-  google_calendar_account: Object,
-  slack_id: String,
+  default_meeting_length: {
+    type: Number,
+    default: 30,
+  },
+  google_auth_tokens: Object,
+  slack_id: {
+    type: String,
+    required: true,
+  },
   slack_username: String,
   slack_email: String,
-  slack_dm_id: String,
-})
+  }, { minimize: false })
 
 const User = mongoose.model('User', userSchema)
 
