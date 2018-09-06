@@ -1,3 +1,4 @@
+const _ = require('lodash')
 const { RTMClient } = require('@slack/client')
 
 const { detectIntent } = require('../apis/dialogflow')
@@ -5,7 +6,11 @@ const { sendMeetingConfirmation, sendReminderConfirmation, getUserInfo, postMess
 const User = require('../models/User')
 
 const NGROK_URL = process.env.NGROK_URL
+const RTM_CONNECTION_THROTTLE = 60000 // Tier 1 Slack Rate Limit, 1 call per minute
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
+
+const throttledRTMConnection = _.throttle(()=>rtm.start(), RTM_CONNECTION_THROTTLE)
+
 const rtm = new RTMClient(SLACK_BOT_TOKEN)
 
 rtm.on('message', message => {
@@ -47,4 +52,4 @@ rtm.on('message', message => {
   console.log(`(channel:${ message.channel }) ${ message.user } says: ${ message.text }`)
 })
 
-rtm.start()
+throttledRTMConnection()

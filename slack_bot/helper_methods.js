@@ -13,6 +13,17 @@ const capitalizeString = string => {
   return string[0].toUpperCase() + string.slice(1)
 }
 
+const confirmMeeting = () => {
+  console.log('Meeting Confirmed!')
+  return 'Meeting Confirmed!'
+
+}
+
+const confirmReminder = () => {
+  console.log('Reminder Confirmed')
+  return 'Reminder Confirmed'
+}
+
 const getFormattedDate = (date) => {
   const dayOfWeek = moment(date).format('dddd')
   const formattedDate = moment(date).format('LL')
@@ -56,17 +67,6 @@ const getUserInfo = (user) => {
     }
   })
   .catch(console.error)
-}
-
-const confirmMeeting = () => {
-  console.log('Meeting Confirmed!')
-  return 'Meeting Confirmed!'
-
-}
-
-const confirmReminder = () => {
-  console.log('Reminder Confirmed')
-  return 'Reminder Confirmed'
 }
 
 const handleUnexpectedEvent = () => {
