@@ -13,7 +13,73 @@ const capitalizeString = string => {
   return string[0].toUpperCase() + string.slice(1)
 }
 
-const confirmMeeting = _.throttle(async (message) => {
+const getFormattedDate = (date) => {
+  const dayOfWeek = moment(date).format('dddd')
+  const formattedDate = moment(date).format('LL')
+
+  return `${ dayOfWeek }, ${ formattedDate }`
+}
+
+const getFormattedDuration = (durationFields) => {
+  const durationUnit = durationFields.unit.stringValue
+  const durationAmount = durationFields.amount.numberValue
+  const duration = durationUnit === 'h' ?   durationAmount * 60 : durationAmount
+
+  let formattedDuration, hours, minutes
+  if (duration >=60) {
+    hours = Math.floor(duration / 60)
+    minutes = duration - (hours * 60)
+  }
+
+  if (hours > 0) {
+    if (minutes) {
+      formattedDuration = `${ hours } hr ${ minutes } min`
+    } else {
+      formattedDuration = `${ hours } hr`
+    }
+  } else {
+    formattedDuration = `${ duration } min`
+  }
+
+  return formattedDuration
+}
+
+const getUserInfo = (user) => {
+  return web.users.info({ user })
+  .then((resp) => {
+    const { id, name } = resp.user
+    const { email } = resp.user.profile
+    return {
+      slack_id: id,
+      slack_username: name,
+      slack_email: email,
+    }
+  })
+  .catch(console.error)
+}
+
+const confirmMeeting = () => {
+  console.log('Meeting Confirmed!')
+  return 'Meeting Confirmed!'
+
+}
+
+const confirmReminder = () => {
+  console.log('Reminder Confirmed')
+  return 'Reminder Confirmed'
+}
+
+const handleUnexpectedEvent = () => {
+  console.log('Handle Some Unknown Event')
+  return 'This is some unknown event'
+}
+
+const postMessage = (conversationId, message) => {
+  return web.chat.postMessage({ channel: conversationId, message })
+  .catch(console.error)
+}
+
+const sendMeetingConfirmation = _.throttle(async (message) => {
   const result = await detectIntent(message)
 
   const meetingParameters = result.parameters.fields
@@ -67,7 +133,7 @@ const confirmMeeting = _.throttle(async (message) => {
   .catch(console.error)
 }, API_THROTTLE)
 
-const confirmReminder = _.throttle(async (message) => {
+const sendReminderConfirmation = _.throttle(async (message) => {
   const result = await detectIntent(message)
 
   const reminderParameters = result.parameters.fields
@@ -112,60 +178,12 @@ const confirmReminder = _.throttle(async (message) => {
   .catch(console.error)
 }, API_THROTTLE)
 
-const getFormattedDate = (date) => {
-  const dayOfWeek = moment(date).format('dddd')
-  const formattedDate = moment(date).format('LL')
-
-  return `${ dayOfWeek }, ${ formattedDate }`
-}
-
-const getFormattedDuration = (durationFields) => {
-  const durationUnit = durationFields.unit.stringValue
-  const durationAmount = durationFields.amount.numberValue
-  const duration = durationUnit === 'h' ?   durationAmount * 60 : durationAmount
-
-  let formattedDuration, hours, minutes
-  if (duration >=60) {
-    hours = Math.floor(duration / 60)
-    minutes = duration - (hours * 60)
-  }
-
-  if (hours > 0) {
-    if (minutes) {
-      formattedDuration = `${ hours } hr ${ minutes } min`
-    } else {
-      formattedDuration = `${ hours } hr`
-    }
-  } else {
-    formattedDuration = `${ duration } min`
-  }
-
-  return formattedDuration
-}
-
-const getUserInfo = (user) => {
-  return web.users.info({ user })
-  .then((resp) => {
-    const { id, name } = resp.user
-    const { email } = resp.user.profile
-    return {
-      slack_id: id,
-      slack_username: name,
-      slack_email: email,
-    }
-  })
-  .catch(console.error)
-}
-
-const postMessage = (conversationId, message) => {
-  return web.chat.postMessage({ channel: conversationId, message })
-  .catch(console.error)
-}
-
-
 module.exports = {
   confirmMeeting,
   confirmReminder,
+  handleUnexpectedEvent,
+  sendMeetingConfirmation,
+  sendReminderConfirmation,
   getUserInfo,
   postMessage
 }

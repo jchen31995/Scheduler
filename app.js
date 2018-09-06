@@ -4,6 +4,7 @@ const express = require('express')
 const mongoose = require('mongoose')
 
 const googleAPI = require('./apis/google/index')
+const { confirmMeeting, confirmReminder, handleUnexpectedEvent } = require('./slack_bot/helper_methods')
 require('./slack_bot')
 
 mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true })
@@ -25,7 +26,21 @@ app.post('/bot/events', (req, res) => {
 })
 
 app.post('/slack/interactive', (req, res) => {
-  res.status(200).send('slack interactive component')
+  const eventType = JSON.parse(req.body.payload).actions[0].name === 'confirm-meeting' ? 'meeting' : 'reminder'
+  let confirmationMessage
+  switch (eventType) {
+    case ('meeting'):
+      confirmationMessage = confirmMeeting(req.body)
+      break
+
+    case ('reminder'):
+      confirmationMessage = confirmReminder(req.body)
+      break
+
+    default:
+      confirmationMessage = handleUnexpectedEvent(req.body)
+  }
+  res.status(200).send(confirmationMessage)
 })
 
 app.listen(process.env.PORT || 3000, function () {
