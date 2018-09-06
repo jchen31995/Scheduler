@@ -1,8 +1,11 @@
+const bodyParser = require('body-parser')
 const express = require('express')
 const { getAuthClient, getAuthToken, getAuthURL } = require('./oauth_methods')
 const { addEvent, listEvents } = require('./calendar_methods')
 
 const router = express.Router()
+router.use(bodyParser.json())
+router.use(bodyParser.urlencoded({ extended: false }))
 
 router.get('/authenticate', (req, res) => {
   const userSlackId = req.query.slack_id

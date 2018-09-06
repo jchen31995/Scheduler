@@ -3,7 +3,7 @@ require('dotenv-safe').config()
 const express = require('express')
 const mongoose = require('mongoose')
 
-const googleAPI = require('./google_api/routes')
+const googleAPI = require('./apis/google/index')
 require('./slack_bot')
 
 mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true })

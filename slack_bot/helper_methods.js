@@ -17,4 +17,9 @@ const getUserInfo = (user) => {
   .catch((err) => console.log('Error getting user info: ', err))
 }
 
-module.exports = { getUserInfo }
+const postMessage = (conversationId, message) => {
+  return web.chat.postMessage({ channel: conversationId, text: message })
+  .catch(console.error);
+}
+
+module.exports = { getUserInfo, postMessage }

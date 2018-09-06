@@ -1,6 +1,6 @@
 const { google } = require('googleapis')
 
-const User = require('../models/User')
+const User = require('../../models/User')
 
 // Tokens
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
@@ -31,7 +31,7 @@ const setOAuthCredentials = async(userSlackId) => {
   await User.findOne({ slack_id: userSlackId })
     .then ((user) => {
       auth.setCredentials(user.google_auth_tokens)
-      if(new Date(user.google_auth_tokens.expiry_date).getTime() - new Date().getTime() < 0) {
+      if(user.google_auth_tokens.expiry_date - new Date().getTime() < 0) {
         auth.refreshAccessToken(async(err, tokens) => {
           if (err) {
             return err
