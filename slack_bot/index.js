@@ -1,10 +1,7 @@
-
-const _ = require('lodash')
 const { RTMClient } = require('@slack/client')
 
 const { detectIntent } = require('../apis/dialogflow')
 const { sendMeetingConfirmation, sendReminderConfirmation, getUserInfo, postMessage } = require('./helper_methods')
-const { addEvent } = require('../apis/google/calendar_methods')
 const User = require('../models/User')
 
 const NGROK_URL = process.env.NGROK_URL
@@ -35,17 +32,15 @@ rtm.on('message', message => {
       switch(result.intent.displayName) {
         case('meeting.add'):
           sendMeetingConfirmation(message)
-          console.log('meeting added!')
           break
 
         case('reminder.add'):
-          console.log('reminder added!')
           sendReminderConfirmation(message)
           break
 
         default:
-          // postMessage(message.channel, 'I\'m not quite sure what to say...')
-          console.log("default message!")
+          const defaultMessage = `I'm not quite sure what to do...`
+          postMessage(message.channel, defaultMessage)
       }
     })
 

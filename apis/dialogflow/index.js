@@ -15,7 +15,7 @@ const detectIntent = (message) => {
   const request = {
     session: sessionPath,
     queryParams: {
-      "timeZone": momentTZ.tz.guess()
+      'timeZone': momentTZ.tz.guess()
     },
     queryInput: {
       text: {

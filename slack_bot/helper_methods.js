@@ -74,10 +74,10 @@ const handleUnexpectedEvent = () => {
   return 'This is some unknown event'
 }
 
-const postMessage = (conversationId, message) => {
-  return web.chat.postMessage({ channel: conversationId, message })
+const postMessage = _.throttle((conversationId, message) => {
+  return web.chat.postMessage({ channel: conversationId, text: message })
   .catch(console.error)
-}
+}, API_THROTTLE)
 
 const sendMeetingConfirmation = _.throttle(async (message) => {
   const result = await detectIntent(message)
