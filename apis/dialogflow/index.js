@@ -1,4 +1,5 @@
 const dialogflow = require('dialogflow')
+const momentTZ = require('moment-timezone')
 
 const DIALOGFLOW_CREDENTIALS = process.env.DIALOGFLOW_CREDENTIALS_PATH
 const projectId = process.env.DIALOGFLOW_PROJECT_ID
@@ -13,6 +14,9 @@ const sessionPath = sessionClient.sessionPath(projectId, sessionId)
 const detectIntent = (message) => {
   const request = {
     session: sessionPath,
+    queryParams: {
+      "timeZone": momentTZ.tz.guess()
+    },
     queryInput: {
       text: {
         text: message.text,
@@ -30,9 +34,7 @@ const detectIntent = (message) => {
       }
       return result
     })
-    .catch(err => {
-      console.error('ERROR:', err);
-    })
+    .catch(console.error)
 }
 
 module.exports = { detectIntent }

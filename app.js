@@ -19,9 +19,13 @@ app.get('/', (req, res) => {
   res.send('Hello hello!')
 })
 
-app.post('/bot/events', (req,res) => {
+app.post('/bot/events', (req, res) => {
   console.log("An event has been detected: ", req.body)
-  res.sendStatus(200)
+  res.status(200).send('subscribed to events API')
+})
+
+app.post('/slack/interactive', (req, res) => {
+  res.status(200).send('slack interactive component')
 })
 
 app.listen(process.env.PORT || 3000, function () {
