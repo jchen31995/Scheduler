@@ -26,21 +26,25 @@ app.post('/bot/events', (req, res) => {
 })
 
 app.post('/slack/interactive', (req, res) => {
-  const eventType = JSON.parse(req.body.payload).actions[0].name === 'confirm-meeting' ? 'meeting' : 'reminder'
+  const interactivePayload = JSON.parse(req.body.payload)
+  const eventType = interactivePayload.actions[0].name
   let confirmationMessage
   switch (eventType) {
-    case ('meeting'):
-      confirmationMessage = confirmMeeting(req.body)
+    case ('confirm-meeting'):
+    case ('decline-meeting'):
+      confirmationMessage = confirmMeeting(interactivePayload)
       break
 
-    case ('reminder'):
-      confirmationMessage = confirmReminder(req.body)
+    case ('confirm-reminder'):
+    case ('decline-reminder'):
+      confirmationMessage = confirmReminder(interactivePayload)
       break
 
     default:
       confirmationMessage = handleUnexpectedEvent(req.body)
   }
-  res.status(200).send(confirmationMessage)
+  
+  res.status(200).json(confirmationMessage)
 })
 
 app.listen(process.env.PORT || 3000, function () {

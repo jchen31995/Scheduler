@@ -29,9 +29,6 @@ const detectIntent = (message) => {
     .detectIntent(request)
     .then(responses => {
       const result = responses[0].queryResult
-      if (!result.intent) {
-        return null
-      }
       return result
     })
     .catch(console.error)

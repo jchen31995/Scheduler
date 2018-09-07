@@ -40,7 +40,7 @@ const setOAuthCredentials = async(userSlackId) => {
         })
       }
     })
-    .catch((err) => console.log("Error finding user: ", err))
+    .catch(console.error)
   return auth
 }
 

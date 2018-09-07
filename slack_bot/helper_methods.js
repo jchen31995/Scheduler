@@ -2,8 +2,6 @@ const _ = require('lodash')
 const moment = require('moment')
 const { WebClient } = require('@slack/client')
 
-const { detectIntent } = require('../apis/dialogflow')
-
 const API_THROTTLE = 1000
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
 
@@ -13,15 +11,33 @@ const capitalizeString = string => {
   return string[0].toUpperCase() + string.slice(1)
 }
 
-const confirmMeeting = () => {
-  console.log('Meeting Confirmed!')
-  return 'Meeting Confirmed!'
+const confirmMeeting = (payload) => {
+  let confirmationMessage
+  switch(payload.actions[0].value) {
+    case('confirmed'):
+      confirmationMessage = { text: 'Meeting Confirmed' }
+      break
+
+    case('declined'):
+      confirmationMessage = { text: 'Meeting Declined' }
+      break
+  }
+  return confirmationMessage
 
 }
 
-const confirmReminder = () => {
-  console.log('Reminder Confirmed')
-  return 'Reminder Confirmed'
+const confirmReminder = (payload) => {
+  let confirmationMessage
+  switch(payload.actions[0].value) {
+    case('confirmed'):
+      confirmationMessage = { text: 'Reminder Confirmed' }
+      break
+
+    case('declined'):
+      confirmationMessage = { text: 'Reminder Declined' }
+      break
+  }
+  return confirmationMessage
 }
 
 const getFormattedDate = (date) => {
@@ -79,15 +95,14 @@ const postMessage = _.throttle((conversationId, message) => {
   .catch(console.error)
 }, API_THROTTLE)
 
-const sendMeetingConfirmation = _.throttle(async (message) => {
-  const result = await detectIntent(message)
-
+const sendMeetingConfirmation = _.throttle(async (result, message) => {
   const meetingParameters = result.parameters.fields
 
   const date = meetingParameters.date.stringValue
   const formattedDate = getFormattedDate(date)
 
-  const durationFields = meetingParameters.duration.structValue.fields
+  const defaultDuration = { amount: {numberValue: 30}, unit: {stringValue: 'min'} }
+  const durationFields = meetingParameters.duration.structValue ? meetingParameters.duration.structValue.fields : defaultDuration
   const formattedDuration = getFormattedDuration(durationFields)
 
   const invitees = meetingParameters.invitees.listValue.values.map(person => capitalizeString(person.stringValue))
@@ -111,13 +126,13 @@ const sendMeetingConfirmation = _.throttle(async (message) => {
           "name": "confirm-meeting",
           "text": "Yes",
           "type": "button",
-          "value": true
+          "value": "confirmed"
         },
         {
           "name": "decline-meeting",
           "text": "No",
           "type": "button",
-          "value": false
+          "value": "declined"
         },
       ]
     }
@@ -133,9 +148,7 @@ const sendMeetingConfirmation = _.throttle(async (message) => {
   .catch(console.error)
 }, API_THROTTLE)
 
-const sendReminderConfirmation = _.throttle(async (message) => {
-  const result = await detectIntent(message)
-
+const sendReminderConfirmation = _.throttle(async (result, message) => {
   const reminderParameters = result.parameters.fields
   const subject = capitalizeString(reminderParameters.subject.stringValue)
 
@@ -148,7 +161,7 @@ const sendReminderConfirmation = _.throttle(async (message) => {
     {
       "text": 'Confirm or decline this event',
       "fallback": "I was unable to  add the reminder to your calendar. Please try again.",
-      "callback_id": "add_meeting",
+      "callback_id": "add_reminder",
       "color": "#3AA3E3",
       "attachment_type": "default",
       "actions": [
@@ -156,13 +169,13 @@ const sendReminderConfirmation = _.throttle(async (message) => {
           "name": "confirm-reminder",
           "text": "Yes",
           "type": "button",
-          "value": true
+          "value": "confirmed"
         },
         {
           "name": "decline-reminder",
           "text": "No",
           "type": "button",
-          "value": false
+          "value": "declined"
         },
       ]
     }
@@ -178,6 +191,11 @@ const sendReminderConfirmation = _.throttle(async (message) => {
   .catch(console.error)
 }, API_THROTTLE)
 
+const updateMessage = _.throttle((attachments, channelId, message, ts) => {
+  return web.chat.update({ channel: channelId, text: message, ts, attachments, as_user: true })
+  .catch(console.error)
+}, API_THROTTLE)
+
 module.exports = {
   confirmMeeting,
   confirmReminder,
@@ -185,5 +203,6 @@ module.exports = {
   sendMeetingConfirmation,
   sendReminderConfirmation,
   getUserInfo,
-  postMessage
+  postMessage,
+  updateMessage
 }
