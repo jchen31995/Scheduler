@@ -27,19 +27,20 @@ const listEvents = async (userSlackId) => {
   .catch((err) => err)
 }
 
-const addEvent = async (userSlackId, event) => {
+const addEvent = async (userSlackId, calendarId, event) => {
   const auth = await setOAuthCredentials(userSlackId)
   const calendar = google.calendar({version: 'v3', auth})
-  calendar.events.insert({
+
+  return calendar.events.insert({
     auth: auth,
-    calendarId: 'primary',
+    calendarId,
     resource: event,
   })
   .then((resp) => {
     const createdEvent = resp.data
-    console.log('Event created: %s', createdEvent.htmlLink)
+    return createdEvent
   })
-  .catch((err) => err)
+  .catch(console.error)
 }
 
 module.exports = {

@@ -10,10 +10,10 @@ const taskSchema = new Schema({
   location: String,
   description: String,
   day: {
-    type: String,
+    type: Object,
     required: true,
   },
-  google_calendar_event_id: String,
+  google_calendar_id: String,
   requester_id: String,
 })
 

@@ -1,6 +1,11 @@
 const _ = require('lodash')
 const moment = require('moment')
+const momentTZ = require('moment-timezone')
 const { WebClient } = require('@slack/client')
+
+const Meeting = require('../models/Meeting')
+const Task = require('../models/Task')
+const { addEvent } = require('../apis/google/calendar_methods')
 
 const API_THROTTLE = 1000
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
@@ -11,6 +16,7 @@ const capitalizeString = string => {
   return string[0].toUpperCase() + string.slice(1)
 }
 
+// need to promisify this to line up async functions in app.js
 const confirmMeeting = (payload) => {
   let confirmationMessage
   switch(payload.actions[0].value) {
@@ -23,9 +29,9 @@ const confirmMeeting = (payload) => {
       break
   }
   return confirmationMessage
-
 }
 
+// need to promisify this to line up async functions in app.js
 const confirmReminder = (payload) => {
   let confirmationMessage
   switch(payload.actions[0].value) {
@@ -50,7 +56,7 @@ const getFormattedDate = (date) => {
 const getFormattedDuration = (durationFields) => {
   const durationUnit = durationFields.unit.stringValue
   const durationAmount = durationFields.amount.numberValue
-  const duration = durationUnit === 'h' ?   durationAmount * 60 : durationAmount
+  const duration = durationUnit === 'hours' ?   durationAmount * 60 : durationAmount
 
   let formattedDuration, hours, minutes
   if (duration >=60) {
@@ -85,10 +91,7 @@ const getUserInfo = (user) => {
   .catch(console.error)
 }
 
-const handleUnexpectedEvent = () => {
-  console.log('Handle Some Unknown Event')
-  return 'This is some unknown event'
-}
+const handleUnexpectedEvent = () => 'This is some unknown event'
 
 const postMessage = _.throttle((conversationId, message) => {
   return web.chat.postMessage({ channel: conversationId, text: message })
@@ -98,11 +101,27 @@ const postMessage = _.throttle((conversationId, message) => {
 const sendMeetingConfirmation = _.throttle(async (result, message) => {
   const meetingParameters = result.parameters.fields
 
-  const date = meetingParameters.date.stringValue
+  const date = meetingParameters.date.stringValue.split('T')[0]
+  const startTimeString = date + 'T' + meetingParameters.time.stringValue.split('T')[1]
+  const startTime = moment(startTimeString).toDate()
+  const timeZone = momentTZ.tz.guess()
   const formattedDate = getFormattedDate(date)
 
-  const defaultDuration = { amount: {numberValue: 30}, unit: {stringValue: 'min'} }
-  const durationFields = meetingParameters.duration.structValue ? meetingParameters.duration.structValue.fields : defaultDuration
+  const defaultDuration = { amount: {numberValue: 30}, unit: {stringValue: 'minutes'} }
+
+  let durationObjWithAdjustedUnit = Object.assign({},meetingParameters.duration.structValue)
+  if (meetingParameters.duration.structValue.fields) {
+    if(meetingParameters.duration.structValue.fields.unit.stringValue[0]==='m'){
+      durationObjWithAdjustedUnit.fields.unit.stringValue = 'minutes'
+    } else{
+      durationObjWithAdjustedUnit.fields.unit.stringValue = 'hours'
+    }
+  }
+
+
+  const durationFields = durationObjWithAdjustedUnit ? durationObjWithAdjustedUnit.fields : defaultDuration
+  const momentEndTime = moment(startTime).add(durationFields.amount.numberValue, durationFields.unit.stringValue)
+  const endTime = momentEndTime.toDate()
   const formattedDuration = getFormattedDuration(durationFields)
 
   const invitees = meetingParameters.invitees.listValue.values.map(person => capitalizeString(person.stringValue))
@@ -113,6 +132,19 @@ const sendMeetingConfirmation = _.throttle(async (result, message) => {
   const formattedTime = moment(time).format('LT')
 
   const scheduleConfirmationPrompt = `Scheduling: ${subject} with ${inviteesString} on ${ formattedDate } at ${ formattedTime } for ${ formattedDuration }`
+
+  const meetingRecord = {
+    summary: subject,
+    start: {dateTime: startTime, timeZone },
+    end: {dateTime: endTime, timeZone },
+    attendees: invitees,
+    google_calendar_id: 'primary',
+    status: 'pending',
+    requester_id: message.user,
+    reminder: { userDefault: true }
+  }
+
+  new Meeting(meetingRecord).save()
 
   const attachments = [
     {
@@ -150,12 +182,25 @@ const sendMeetingConfirmation = _.throttle(async (result, message) => {
 
 const sendReminderConfirmation = _.throttle(async (result, message) => {
   const reminderParameters = result.parameters.fields
+
   const subject = capitalizeString(reminderParameters.subject.stringValue)
 
   const date = reminderParameters.date.stringValue
+  const calendarDate = { date: date.split('T')[0] }
   const formattedDate = getFormattedDate(date)
 
   const scheduleConfirmationPrompt = `Scheduling: ${subject} on ${ formattedDate }`
+
+  const reminderRecord = {
+    summary: subject,
+    day: calendarDate,
+    google_calendar_id: 'primary',
+    requester_id: message.user,
+  }
+
+  new Task(reminderRecord).save()
+
+  // addEvent(message.user, calendarReminder)
 
   const attachments = [
     {

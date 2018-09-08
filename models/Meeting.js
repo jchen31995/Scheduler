@@ -3,23 +3,20 @@ mongoose.Promise = global.Promise
 const Schema = mongoose.Schema
 
 const meetingSchema = new Schema({
-  day: {
-    type: Date,
-    required: true,
-  },
-  time: {
-    type: Date,
-    required: true,
-  },
-  invitees: {
-    type: Array,
-    required: true,
-  },
   summary: String,
   location: String,
   description: String,
+  start: {
+    type: Object,
+    required: true,
+  },
+  end: {
+    type: Object,
+    required: true,
+  },
+  attendees: Array,
   meeting_length: Number,
-  google_calendar: Object,
+  google_calendar_id: String,
   status: String, // pending, scheduled
   created_at: Date,
   requester_id: String,
