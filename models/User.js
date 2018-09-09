@@ -12,6 +12,10 @@ const userSchema = new Schema({
     type: String,
     required: true,
   },
+  slack_dm_id: {
+    type: String,
+    required: true,
+  },
   slack_username: String,
   slack_email: String,
   }, { minimize: false })

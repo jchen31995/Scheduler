@@ -21,10 +21,12 @@ rtm.on('message', message => {
     return
   }
 
-  User.findOne({slack_id: message.user})
+  const userSlackId = message.user
+  const userDmId = message.channel
+  User.findOne({slack_id: userSlackId})
     .then(async (user) => {
       if (!user) {
-        const userInfo = await getUserInfo(message.user)
+        const userInfo = await getUserInfo(userSlackId, userDmId)
         return new User(userInfo).save()
       }
       return user

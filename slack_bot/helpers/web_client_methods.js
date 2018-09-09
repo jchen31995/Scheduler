@@ -9,8 +9,8 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
 
 const web = new WebClient(SLACK_BOT_TOKEN)
 
-const getUserInfo = (user) => {
-  return web.users.info({ user })
+const getUserInfo = (userId, dmId) => {
+  return web.users.info({ user: userId })
   .then((resp) => {
     const { id, name } = resp.user
     const { email } = resp.user.profile
@@ -18,6 +18,7 @@ const getUserInfo = (user) => {
       slack_id: id,
       slack_username: name,
       slack_email: email,
+      slack_dm_id: dmId,
     }
   })
   .catch(console.error)
@@ -25,34 +26,45 @@ const getUserInfo = (user) => {
 
 const greetUsers = () => {
   const greetingMessage = `Hello! I'm a scheduling assistant. I can create reminders and meetings.`
-  web.conversations.list({types: 'im'})
-  .then(resp => {
-    resp.channels.forEach(async(dm) => {
+  web.conversations.list({ types: 'im' })
+  .then(async(resp) => {
+    await resp.channels.forEach((dm) => {
       if(dm.user!=='USLACKBOT'){
-        await web.conversations.history({ channel: dm.id, count: 10 })
+        const userSlackId = dm.user
+        const userDmId = dm.id
+        web.conversations.history({ channel: userDmId })
         .then((msgs) => {
-          const mostRecent = msgs.messages[0]
-          if (mostRecent) {
-            if( mostRecent.text!==greetingMessage) {
-              postMessage(dm.id, greetingMessage)
+          const recentMessages = msgs.messages
+          let appIntroAlreadyMade = false
+          for(let i = 0; i<recentMessages.length; i++){
+            if(recentMessages[i].text === greetingMessage) {
+              appIntroAlreadyMade = true
+              break
             }
+          }
+
+          if (!appIntroAlreadyMade) {
+            web.chat.postMessage({ channel: userDmId, text: greetingMessage })
           }
         })
         .catch(console.error)
 
-        await User.findOne({slack_id: dm.user})
+        User.findOne({slack_id: userSlackId})
         .then(async (user) => {
           if (!user) {
-            const userInfo = await getUserInfo(dm.user)
+            const userInfo = await getUserInfo(userSlackId, userDmId)
+
             return new User(userInfo).save()
           }
           return user
         })
-        .then(user => {
+        .then((user) => {
+
           if (!user.google_auth_tokens) {
+
             const authenticationURL = `${ NGROK_URL }/authenticate?slack_id=${ user.slack_id }`
             const authenticationMessage = `I need your permission to access your calendar. I won’t be sharing any information with others. Please connect your calendar here: ${ authenticationURL }`
-            postMessage( dm.id, authenticationMessage)
+            web.chat.postMessage({ channel: userDmId, text: authenticationMessage })
           }
         })
         .catch(console.error)
@@ -60,7 +72,6 @@ const greetUsers = () => {
       }
     })
   })
-
 }
 
 const postMessage = _.throttle((conversationId, message, attachments) => {

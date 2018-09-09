@@ -3,6 +3,8 @@ const express = require('express')
 
 const { addEvent, listEvents } = require('./helpers/calendar_methods')
 const { getAuthClient, getAuthToken, getAuthURL } = require('./helpers/oauth')
+const User = require('../../models/User')
+const { postMessage } = require('../../slack_bot/helpers/web_client_methods')
 
 const router = express.Router()
 router.use(bodyParser.json())
@@ -18,17 +20,22 @@ router.get('/authenticate', (req, res) => {
 // google authentication happens here
 router.get('/authenticate/callback', (req, res) => {
   getAuthToken(req.query.code, req.query.state).then((resp) => {
-    res.redirect('/authenticate/success')
+    res.redirect(`/authenticate/success?token=${resp.access_token}`)
   }).catch(err => res.redirect('/authenticate/failure?err=' + err))
 })
 
 router.get('/authenticate/success', (req, res) => {
+  const authToken = req.query.token
+  User.findOne({ "google_auth_tokens.access_token": authToken })
+  .then((user) => {
+    postMessage(user.slack_dm_id, `Thanks for trusting me to handle your calendar. I’m now connected.`)
+  })
   res.send('Successfully authenticated user. Head back over to Slack!')
 })
 
 router.get('/authenticate/failure', (req, res) => {
   const err = req.query.err
-  res.send(`Something went wrong with the authentication. Please head back over to Slack and try again. Here's the error: ${err}`)
+  res.send(`Something went wrong with the authentication. Please head back over to Slack and try again. Here's the error: \n ${err}`)
 })
 
 // route to test if google calendar successfully authenticated + listing events
