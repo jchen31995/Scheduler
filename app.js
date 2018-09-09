@@ -4,11 +4,11 @@ const express = require('express')
 const mongoose = require('mongoose')
 
 const googleAPI = require('./apis/google/index')
-const { addEvent } = require('./apis/google/calendar_methods')
+const { addEvent } = require('./apis/google/helpers/calendar_methods')
 const Meeting = require('./models/Meeting')
 const Task = require('./models/Task')
-const { confirmMeeting, confirmReminder, handleUnexpectedEvent } = require('./slack_bot/helper_methods')
 require('./slack_bot')
+const { handleUnexpectedEvent } = require('./slack_bot/helpers/event_handlers')
 
 mongoose.connect(process.env.MONGODB_URL, { useNewUrlParser: true })
 
@@ -40,6 +40,7 @@ app.post('/slack/interactive', (req, res) => {
         const { summary,
           google_calendar_id: googleCalendarId,
           location,
+          attendees,
           description,
           start,
           end
@@ -47,6 +48,7 @@ app.post('/slack/interactive', (req, res) => {
         const calendarEvent = {
           summary,
           location,
+          attendees,
           description,
           start,
           end,
@@ -90,8 +92,8 @@ app.post('/slack/interactive', (req, res) => {
     
     case ('decline-meeting'):
       Meeting.findOne({ requester_id: requesterId })
-        .then(task => {
-          task.remove()
+        .then(meeting => {
+          meeting.remove()
         })
         .catch(console.error)
       confirmationMessage = { text: `Alrighty, the event won't get added to your calendar` }

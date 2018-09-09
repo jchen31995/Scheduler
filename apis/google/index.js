@@ -1,8 +1,8 @@
 const bodyParser = require('body-parser')
 const express = require('express')
 
-const { getAuthClient, getAuthToken, getAuthURL } = require('./oauth_methods')
-const { addEvent, listEvents } = require('./calendar_methods')
+const { addEvent, listEvents } = require('./helpers/calendar_methods')
+const { getAuthClient, getAuthToken, getAuthURL } = require('./helpers/oauth')
 
 const router = express.Router()
 router.use(bodyParser.json())
@@ -55,7 +55,7 @@ router.post('/add-reminder', (req, res) => {
       'useDefault': true,
     }
   }
-  addEvent(userSlackId, exampleTask)
+  addEvent(userSlackId, 'primary', exampleTask)
   res.status(200).send('Adds reminder')
 })
 
@@ -82,7 +82,7 @@ router.post('/add-meeting', (req, res) => {
       useDefault: true,
     },
   }
-  addEvent(userSlackId, exampleMeeting)
+  addEvent(userSlackId, 'primary', exampleMeeting)
   res.status(200).send('Adds a meeting')
 })
 

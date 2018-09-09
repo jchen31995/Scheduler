@@ -1,6 +1,22 @@
 const { google } = require('googleapis')
 
-const { setOAuthCredentials } = require('./oauth_methods')
+const { setOAuthCredentials } = require('./oauth')
+
+const addEvent = async (userSlackId, calendarId, event) => {
+  const auth = await setOAuthCredentials(userSlackId)
+  const calendar = google.calendar({version: 'v3', auth})
+
+  return calendar.events.insert({
+    auth: auth,
+    calendarId,
+    resource: event,
+  })
+  .then((resp) => {
+    const createdEvent = resp.data
+    return createdEvent
+  })
+  .catch(console.error)
+}
 
 const listEvents = async (userSlackId) => {
   const auth = await setOAuthCredentials(userSlackId)
@@ -25,22 +41,6 @@ const listEvents = async (userSlackId) => {
     }
   })
   .catch((err) => err)
-}
-
-const addEvent = async (userSlackId, calendarId, event) => {
-  const auth = await setOAuthCredentials(userSlackId)
-  const calendar = google.calendar({version: 'v3', auth})
-
-  return calendar.events.insert({
-    auth: auth,
-    calendarId,
-    resource: event,
-  })
-  .then((resp) => {
-    const createdEvent = resp.data
-    return createdEvent
-  })
-  .catch(console.error)
 }
 
 module.exports = {

@@ -1,6 +1,6 @@
 const { google } = require('googleapis')
 
-const User = require('../../models/User')
+const User = require('../../../models/User')
 
 // Tokens
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || ''
