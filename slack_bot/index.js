@@ -2,7 +2,7 @@ const _ = require('lodash')
 const { RTMClient } = require('@slack/client')
 
 const { detectIntent } = require('../apis/dialogflow')
-const { getUserInfo, postMessage } = require('./helpers/web_client_methods')
+const { getUserInfo, greetUsers, postMessage } = require('./helpers/web_client_methods')
 const { promptMeeting, promptReminder } = require('./helpers/event_handlers')
 const User = require('../models/User')
 
@@ -10,9 +10,11 @@ const NGROK_URL = process.env.NGROK_URL
 const RTM_CONNECTION_THROTTLE = 60000 // Tier 1 Slack Rate Limit, 1 call per minute
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
 
+const rtm = new RTMClient(SLACK_BOT_TOKEN)
+
 const throttledRTMConnection = _.throttle(()=>rtm.start(), RTM_CONNECTION_THROTTLE)
 
-const rtm = new RTMClient(SLACK_BOT_TOKEN)
+rtm.on('hello', greetUsers)
 
 rtm.on('message', message => {
   if (message.subtype === 'bot_message' || message.subtype==='message_changed') {
@@ -34,24 +36,24 @@ rtm.on('message', message => {
         postMessage( message.channel, authenticationMessage)
         .catch(console.error)
         return
-      }
+      } else{
+        const result = await detectIntent(message)
+        if(result.action==='get-additional-info' && result.fulfillmentText) {
+          postMessage(message.channel, result.fulfillmentText)
+        } else {
+          const defaultMessage = `I'm not quite sure what to do...`
+          switch(result.intent.displayName) {
+            case('meeting.add'):
+              promptMeeting(result, message)
+              break
 
-      const result = await detectIntent(message)
-      if(result.action==='get-additional-info' && result.fulfillmentText) {
-        postMessage(message.channel, result.fulfillmentText)
-      } else {
-        const defaultMessage = `I'm not quite sure what to do...`
-        switch(result.intent.displayName) {
-          case('meeting.add'):
-            promptMeeting(result, message)
-            break
+            case('reminder.add'):
+              promptReminder(result, message)
+              break
 
-          case('reminder.add'):
-            promptReminder(result, message)
-            break
-
-          default:
-            postMessage(message.channel, defaultMessage)
+            default:
+              postMessage(message.channel, defaultMessage)
+          }
         }
       }
     })
