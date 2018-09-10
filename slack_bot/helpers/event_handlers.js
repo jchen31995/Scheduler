@@ -2,11 +2,11 @@ const _ = require('lodash')
 const moment = require('moment')
 const momentTZ = require('moment-timezone')
 
-const { capitalizeString, getFormattedDate, getFormattedDuration } = require('./message_formatting')
 const { meetingAttachment, reminderAttachment } = require('./interactive_messages')
-const { postMessage } = require('./web_client_methods')
+const { capitalizeString, getFormattedDate, getFormattedDuration } = require('./message_formatting')
 const Meeting = require('../../models/Meeting')
 const Task = require('../../models/Task')
+const { getUserInfo, postMessage } = require('./web_client_methods')
 
 const API_THROTTLE = 1000
 
@@ -67,11 +67,25 @@ const promptMeeting = _.throttle(async (result, message) => {
   const endTime = momentEndTime.toDate()
   const formattedDuration = getFormattedDuration(durationFields)
 
-  // you can massage thie invitees to include slack users
-  const invitees = meetingParameters.invitees.listValue.values.map(person => {return {displayName: capitalizeString(person.stringValue), email: 'temp@gmail.com'}})
+
+  // you can massage this invitees to include slack users
+  let invitees = []
+  const allInvitees = meetingParameters.invitees.listValue.values
+  for (let i = 0; i < allInvitees.length; i++ ) {
+    const currentUser = allInvitees[i].stringValue.trim()
+    if(currentUser[0]==='<'){
+      const slackId = currentUser[currentUser.length-1] === '>' ? currentUser.slice(2,currentUser.length-1) : currentUser.slice(2,currentUser.length)
+      const { name, email } = await getUserInfo(slackId)
+      invitees.push({ displayName: capitalizeString(name), email  })
+
+    } else{
+      invitees.push({ displayName: capitalizeString(currentUser), email: 'temp@slack.com' })
+    }
+  }
+
   const inviteesString = invitees.length > 1 ? invitees.map((person) => person.displayName).join(', ') : invitees[0].displayName
 
-  const subject = `${capitalizeString(meetingParameters.subject.stringValue)} with ${inviteesString}`
+  const subject = `${meetingParameters.subject.stringValue ? capitalizeString(meetingParameters.subject.stringValue) : 'Meeting'} with ${inviteesString}`
   const time = meetingParameters.time.stringValue
   const formattedTime = moment(time).format('LT')
 

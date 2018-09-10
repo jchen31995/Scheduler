@@ -9,7 +9,17 @@ const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN
 
 const web = new WebClient(SLACK_BOT_TOKEN)
 
-const getUserInfo = (userId, dmId) => {
+const getUserInfo = (userId) => {
+  return web.users.info({ user: userId })
+  .then((resp) => {
+    const { id, name } = resp.user
+    const { email } = resp.user.profile
+    return { id, name, email, }
+  })
+  .catch(console.error)
+}
+
+const setUserSchema = (userId, dmId) => {
   return web.users.info({ user: userId })
   .then((resp) => {
     const { id, name } = resp.user
@@ -52,19 +62,34 @@ const greetUsers = () => {
         User.findOne({slack_id: userSlackId})
         .then(async (user) => {
           if (!user) {
-            const userInfo = await getUserInfo(userSlackId, userDmId)
+            const userInfo = await setUserSchema(userSlackId, userDmId)
 
             return new User(userInfo).save()
           }
           return user
         })
         .then((user) => {
+          const authenticationURL = `${ NGROK_URL }/authenticate?slack_id=${ user.slack_id }`
+          const authenticationMessage = `I need your permission to access your calendar. I won’t be sharing any information with others. Please connect your calendar here: <${ authenticationURL }>`
 
           if (!user.google_auth_tokens) {
+            web.conversations.history({ channel: userDmId, limit: 5 })
+            .then((msgs) => {
+              const recentMessages = msgs.messages
+              let alreadyAskedForPermission = false
+              for(let i = 0; i<recentMessages.length; i++){
+                if(recentMessages[i].text === authenticationMessage) {
+                  alreadyAskedForPermission = true
+                  break
+                }
+              }
 
-            const authenticationURL = `${ NGROK_URL }/authenticate?slack_id=${ user.slack_id }`
-            const authenticationMessage = `I need your permission to access your calendar. I won’t be sharing any information with others. Please connect your calendar here: ${ authenticationURL }`
-            web.chat.postMessage({ channel: userDmId, text: authenticationMessage })
+              if (!alreadyAskedForPermission) {
+                web.chat.postMessage({ channel: userDmId, text: authenticationMessage })
+              }
+            })
+            .catch(console.error)
+
           }
         })
         .catch(console.error)
@@ -86,6 +111,7 @@ const updateMessage = _.throttle((attachments, channelId, message, ts) => {
 
 module.exports = {
   getUserInfo,
+  setUserSchema,
   greetUsers,
   postMessage,
   updateMessage,

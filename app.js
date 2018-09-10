@@ -45,6 +45,7 @@ app.post('/slack/interactive', (req, res) => {
           start,
           end
         } = meeting
+
         const calendarEvent = {
           summary,
           location,
@@ -56,6 +57,7 @@ app.post('/slack/interactive', (req, res) => {
             'useDefault': true,
           }
         }
+        
         addEvent(requesterId, googleCalendarId, calendarEvent).then((resp) => {
           confirmationMessage = `Meeting Confirmed: ${resp.htmlLink}`
           meeting.remove()

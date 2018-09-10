@@ -2,7 +2,7 @@ const _ = require('lodash')
 const { RTMClient } = require('@slack/client')
 
 const { detectIntent } = require('../apis/dialogflow')
-const { getUserInfo, greetUsers, postMessage } = require('./helpers/web_client_methods')
+const { setUserSchema, greetUsers, postMessage } = require('./helpers/web_client_methods')
 const { promptMeeting, promptReminder } = require('./helpers/event_handlers')
 const User = require('../models/User')
 
@@ -26,7 +26,7 @@ rtm.on('message', message => {
   User.findOne({slack_id: userSlackId})
     .then(async (user) => {
       if (!user) {
-        const userInfo = await getUserInfo(userSlackId, userDmId)
+        const userInfo = await setUserSchema(userSlackId, userDmId)
         return new User(userInfo).save()
       }
       return user
