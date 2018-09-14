@@ -20,6 +20,7 @@
   "homepage": "https://github.com/jchen31995/Scheduler#readme",
   "dependencies": {
     "@slack/client": "^4.6.0",
+    "axios": "^0.18.0",
     "body-parser": "^1.18.3",
     "dialogflow": "^0.6.0",
     "dotenv-safe": "^6.0.0",

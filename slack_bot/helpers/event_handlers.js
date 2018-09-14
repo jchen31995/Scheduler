@@ -1,3 +1,4 @@
+const axios = require('axios')
 const _ = require('lodash')
 const moment = require('moment')
 const momentTZ = require('moment-timezone')
@@ -39,6 +40,45 @@ const confirmReminder = (payload) => {
   }
   return confirmationMessage
 }
+
+const displayWeather = _.throttle(async (result, message) => {
+  const API_KEY = process.env.APIXU_KEY
+  const weatherURL = 'http://api.apixu.com/v1/forecast.json'
+  const weatherQuery = result.parameters.fields.query.stringValue
+
+  const weatherLookUp = `${weatherURL}?key=${API_KEY}&q=${weatherQuery}&days=${5}`
+
+  axios.get(weatherLookUp)
+  .then((resp) => {
+    const { location, current } = resp.data
+    const { forecastday } = resp.data.forecast
+    const week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+
+    const fiveDayForecast = forecastday.map((forecast) => {
+      const { date_epoch } = forecast
+      const forecastDate = new Date(date_epoch * 1000)
+      const month = forecastDate.getMonth()
+      const date = forecastDate.getDate()
+      const dayOfWeek = week[forecastDate.getDay()]
+      const { maxtemp_f, mintemp_f } = forecast.day
+      const { text } = forecast.day.condition
+      return `\t ${ dayOfWeek } ${ month }/${ date } - ${ maxtemp_f }°F/${ mintemp_f }°F (${ text }) \n `
+    })
+
+    const forecastMessage =
+      `*Here's the weather in ${ location.name }, ${ location.region }.* \n
+      Current Weather:
+      \t${ current.temp_f }°F (${ current.condition.text })
+      \tSunrise: ${ forecastday[0].astro.sunrise }
+      \tSunset: ${ forecastday[0].astro.sunset }
+
+      Five Day Forecast:
+      ${ fiveDayForecast.join('\t') }
+      `
+    return postMessage(message.channel, forecastMessage)
+  })
+  .catch((err) => postMessage(message.channel, `Sorry, I couldn't find that location. Please try again.`))
+}, API_THROTTLE)
 
 const handleUnexpectedEvent = () => 'This is some unknown event'
 
@@ -140,6 +180,7 @@ const promptReminder = _.throttle(async (result, message) => {
 module.exports = {
   confirmMeeting,
   confirmReminder,
+  displayWeather,
   handleUnexpectedEvent,
   promptMeeting,
   promptReminder,

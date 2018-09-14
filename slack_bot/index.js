@@ -3,7 +3,7 @@ const { RTMClient } = require('@slack/client')
 
 const { detectIntent } = require('../apis/dialogflow')
 const { setUserSchema, greetUsers, postMessage } = require('./helpers/web_client_methods')
-const { promptMeeting, promptReminder } = require('./helpers/event_handlers')
+const { displayWeather, promptMeeting, promptReminder } = require('./helpers/event_handlers')
 const User = require('../models/User')
 
 const NGROK_URL = process.env.NGROK_URL
@@ -51,6 +51,10 @@ rtm.on('message', message => {
 
             case('reminder.add'):
               promptReminder(result, message)
+              break
+
+            case('weather'):
+              displayWeather(result, message)
               break
 
             default:
