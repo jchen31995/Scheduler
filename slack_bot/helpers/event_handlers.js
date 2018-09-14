@@ -54,14 +54,18 @@ const promptMeeting = _.throttle(async (result, message) => {
   const defaultDuration = { amount: {numberValue: 30}, unit: {stringValue: 'minutes'} }
 
   let durationObjWithAdjustedUnit = Object.assign({},meetingParameters.duration.structValue)
-  if (meetingParameters.duration.structValue.fields) {
+
+  if (Object.keys(durationObjWithAdjustedUnit).length!==0) {
+    durationObjWithAdjustedUnit = durationObjWithAdjustedUnit.fields
     if(meetingParameters.duration.structValue.fields.unit.stringValue[0]==='m'){
-      durationObjWithAdjustedUnit.fields.unit.stringValue = 'minutes'
-    } else{
-      durationObjWithAdjustedUnit.fields.unit.stringValue = 'hours'
+      durationObjWithAdjustedUnit.unit.stringValue = 'minutes'
+    } else {
+      durationObjWithAdjustedUnit.unit.stringValue = 'hours'
     }
+  } else {
+    durationObjWithAdjustedUnit = defaultDuration
   }
-  const durationFields = durationObjWithAdjustedUnit ? durationObjWithAdjustedUnit.fields : defaultDuration
+  const durationFields = durationObjWithAdjustedUnit || defaultDuration
 
   const momentEndTime = moment(startTime).add(durationFields.amount.numberValue, durationFields.unit.stringValue)
   const endTime = momentEndTime.toDate()
@@ -84,8 +88,8 @@ const promptMeeting = _.throttle(async (result, message) => {
   }
 
   const inviteesString = invitees.length > 1 ? invitees.map((person) => person.displayName).join(', ') : invitees[0].displayName
-
-  const subject = `${meetingParameters.subject.stringValue ? capitalizeString(meetingParameters.subject.stringValue) : 'Meeting'} with ${inviteesString}`
+  const tempSubject = meetingParameters.subject.stringValue ? capitalizeString(meetingParameters.subject.stringValue) : 'Meeting'
+  const subject = `${tempSubject !== 'A meeting'? tempSubject : 'Meeting'} with ${inviteesString}`
   const time = meetingParameters.time.stringValue
   const formattedTime = moment(time).format('LT')
 
