@@ -1,4 +1,3 @@
-const axios = require('axios')
 const _ = require('lodash')
 const moment = require('moment')
 const momentTZ = require('moment-timezone')
@@ -8,6 +7,7 @@ const { capitalizeString, getFormattedDate, getFormattedDuration } = require('./
 const Meeting = require('../../models/Meeting')
 const Task = require('../../models/Task')
 const { getUserInfo, postMessage } = require('./web_client_methods')
+const { getForecast } = require('../../apis/apixu')
 
 const API_THROTTLE = 1000
 
@@ -41,43 +41,12 @@ const confirmReminder = (payload) => {
   return confirmationMessage
 }
 
-const displayWeather = _.throttle(async (result, message) => {
-  const API_KEY = process.env.APIXU_KEY
-  const weatherURL = 'http://api.apixu.com/v1/forecast.json'
-  const weatherQuery = result.parameters.fields.query.stringValue
+const displayWeather = _.throttle((result, message) => {
+  const location = result.parameters.fields.query.stringValue
 
-  const weatherLookUp = `${weatherURL}?key=${API_KEY}&q=${weatherQuery}&days=${5}`
-
-  axios.get(weatherLookUp)
-  .then((resp) => {
-    const { location, current } = resp.data
-    const { forecastday } = resp.data.forecast
-    const week = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-
-    const fiveDayForecast = forecastday.map((forecast) => {
-      const { date_epoch } = forecast
-      const forecastDate = new Date(date_epoch * 1000)
-      const month = forecastDate.getMonth()
-      const date = forecastDate.getDate()
-      const dayOfWeek = week[forecastDate.getDay()]
-      const { maxtemp_f, mintemp_f } = forecast.day
-      const { text } = forecast.day.condition
-      return `\t ${ dayOfWeek } ${ month }/${ date } - ${ maxtemp_f }°F/${ mintemp_f }°F (${ text }) \n `
-    })
-
-    const forecastMessage =
-      `*Here's the weather in ${ location.name }, ${ location.region }.* \n
-      Current Weather:
-      \t${ current.temp_f }°F (${ current.condition.text })
-      \tSunrise: ${ forecastday[0].astro.sunrise }
-      \tSunset: ${ forecastday[0].astro.sunset }
-
-      Five Day Forecast:
-      ${ fiveDayForecast.join('\t') }
-      `
-    return postMessage(message.channel, forecastMessage)
-  })
-  .catch((err) => postMessage(message.channel, `Sorry, I couldn't find that location. Please try again.`))
+  return getForecast(location)
+  .then((resp) => postMessage(message.channel, resp))
+  .catch(err => postMessage(message.channel, err))
 }, API_THROTTLE)
 
 const handleUnexpectedEvent = () => 'This is some unknown event'
@@ -120,8 +89,7 @@ const promptMeeting = _.throttle(async (result, message) => {
     if(currentUser[0]==='<'){
       const slackId = currentUser[currentUser.length-1] === '>' ? currentUser.slice(2,currentUser.length-1) : currentUser.slice(2,currentUser.length)
       const { name, email } = await getUserInfo(slackId)
-      invitees.push({ displayName: capitalizeString(name), email  })
-
+      invitees.push({ displayName: capitalizeString(name), email })
     } else{
       invitees.push({ displayName: capitalizeString(currentUser), email: 'temp@slack.com' })
     }
@@ -152,7 +120,7 @@ const promptMeeting = _.throttle(async (result, message) => {
   .catch(console.error)
 }, API_THROTTLE)
 
-const promptReminder = _.throttle(async (result, message) => {
+const promptReminder = _.throttle((result, message) => {
   const reminderParameters = result.parameters.fields
 
   const subject = capitalizeString(reminderParameters.subject.stringValue)
