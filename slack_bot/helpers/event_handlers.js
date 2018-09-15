@@ -81,21 +81,40 @@ const promptMeeting = _.throttle(async (result, message) => {
   const formattedDuration = getFormattedDuration(durationFields)
 
 
-  // you can massage this invitees to include slack users
+  // handling invitees with the current DialogFlow model
   let invitees = []
   const allInvitees = meetingParameters.invitees.listValue.values
   for (let i = 0; i < allInvitees.length; i++ ) {
     const currentUser = allInvitees[i].stringValue.trim()
-    if(currentUser[0]==='<'){
+
+    if (currentUser === 'and') {
+      continue
+    }
+
+    if (currentUser === '<@' && allInvitees[i+1]) {
+      let unformattedSlackId = allInvitees[i+1].stringValue.trim()
+      allInvitees[i+1].stringValue = '<@' + unformattedSlackId
+      continue
+    }
+
+    if (currentUser[0]==='<') {
       const slackId = currentUser[currentUser.length-1] === '>' ? currentUser.slice(2,currentUser.length-1) : currentUser.slice(2,currentUser.length)
-      const { name, email } = await getUserInfo(slackId)
+      const userInfo = await getUserInfo(slackId)
+      if (!userInfo) {
+        return postMessage(message.channel,`Hm... Sorry. I couldn't seem to process this request. Please try again. `)
+      }
+
+      const { name, email } = userInfo
       invitees.push({ displayName: capitalizeString(name), email })
-    } else{
-      invitees.push({ displayName: capitalizeString(currentUser), email: 'temp@slack.com' })
+    } else {
+      invitees.push({ displayName: capitalizeString(currentUser) })
     }
   }
 
   const inviteesString = invitees.length > 1 ? invitees.map((person) => person.displayName).join(', ') : invitees[0].displayName
+
+  invitees = invitees.filter((person) => person.email)
+
   const tempSubject = meetingParameters.subject.stringValue ? capitalizeString(meetingParameters.subject.stringValue) : 'Meeting'
   const subject = `${tempSubject !== 'A meeting'? tempSubject : 'Meeting'} with ${inviteesString}`
   const time = meetingParameters.time.stringValue

@@ -57,7 +57,7 @@ app.post('/slack/interactive', (req, res) => {
             'useDefault': true,
           }
         }
-        
+
         addEvent(requesterId, googleCalendarId, calendarEvent).then((resp) => {
           confirmationMessage = `Meeting Confirmed: ${resp.htmlLink}`
           meeting.remove()
@@ -72,7 +72,7 @@ app.post('/slack/interactive', (req, res) => {
       .then(task => {
         const { summary,
           google_calendar_id: googleCalendarId,
-          day
+          day,
          } = task
         const calendarEvent = {
           summary,
@@ -91,7 +91,7 @@ app.post('/slack/interactive', (req, res) => {
       })
       .catch(console.error)
       break
-    
+
     case ('decline-meeting'):
       Meeting.findOne({ requester_id: requesterId })
         .then(meeting => {

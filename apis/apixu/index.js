@@ -24,7 +24,7 @@ const getForecast = (query) => new Promise((resolve, reject) => {
     })
 
     const slackMessage =
-      `*Here's the weather in ${ location.name }, ${ location.region }.* \n
+      `*Here's the weather in ${ location.name }, ${ location.region }.*
       Current Weather:
       \t${ current.temp_f }°F (${ current.condition.text })
       \tSunrise: ${ forecastday[0].astro.sunrise }
