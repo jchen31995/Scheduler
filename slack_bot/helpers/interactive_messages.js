@@ -8,13 +8,13 @@ const meetingAttachment = [
     "actions": [
       {
         "name": "confirm-meeting",
-        "text": "Yes",
+        "text": "Confirm",
         "type": "button",
         "value": "confirmed"
       },
       {
         "name": "decline-meeting",
-        "text": "No",
+        "text": "Decline",
         "type": "button",
         "value": "declined"
       },
@@ -32,13 +32,13 @@ const reminderAttachment = [
     "actions": [
       {
         "name": "confirm-reminder",
-        "text": "Yes",
+        "text": "Confirm",
         "type": "button",
         "value": "confirmed"
       },
       {
         "name": "decline-reminder",
-        "text": "No",
+        "text": "Decline",
         "type": "button",
         "value": "declined"
       },
