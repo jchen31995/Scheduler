@@ -14,12 +14,13 @@ For the curious, here's the [previous implementation](https://github.com/jchen31
 # Demo
 **Schedule a meeting** </br>
 (with non-Slack users)
-
+![alt text](https://raw.githubusercontent.com/jchen31995/slack-scheduler-bot/master/demo/normal-meeting.gif)
 
 (with Slack users)
-
+![alt text](https://raw.githubusercontent.com/jchen31995/slack-scheduler-bot/master/demo/slack-meeting.gif)
 
 **Schedule a reminder**
+![alt text](https://raw.githubusercontent.com/jchen31995/slack-scheduler-bot/master/demo/reminder.gif)
 
 
 # Next Steps
